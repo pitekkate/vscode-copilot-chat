@@ -1,0 +1,56 @@
+name: Manual Release & Upload VSIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag (misal: v0.1.0)'
+        required: true
+      release_name:
+        description: 'Release title (opsional)'
+        required: false
+      release_body:
+        description: 'Release description (opsional)'
+        required: false
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install VSCE (if not in devDependencies)
+        run: npm install -g @vscode/vsce
+
+      - name: Build extension
+        run: npm run build
+
+      # Suppress false positive strings SG.default.* that show up in dist/extension.js after the build. The original strings come from ora.
+      - name: Package VSIX (allow sendgrid secrets)
+        run: npx vsce package --allow-package-secrets sendgrid
+
+      - name: Upload VSIX as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: copilot-chat-vsix
+          path: "*.vsix"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name }}
+          name: ${{ github.event.inputs.release_name }}
+          body: ${{ github.event.inputs.release_body }}
+          files: "*.vsix"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
