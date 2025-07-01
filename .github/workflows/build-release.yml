@@ -1,4 +1,4 @@
-name: Manual Release & Upload VSIX
+name: Manual Build Release & Upload VSIX
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         required: false
 
 jobs:
-  release:
+  build-release:
     runs-on: windows-latest
 
     steps:
@@ -35,7 +35,6 @@ jobs:
       - name: Build extension
         run: npm run build
 
-      # Suppress false positive strings SG.default.* that show up in dist/extension.js after the build. The original strings come from ora.
       - name: Package VSIX (allow sendgrid secrets)
         run: npx vsce package --allow-package-secrets sendgrid
 
